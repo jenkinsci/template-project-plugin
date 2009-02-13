@@ -1,0 +1,6 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry title="${%Template Project}"
+             description="Use all SCM settings from this project.">
+        <f:editableComboBox field="projectName" items="${app.topLevelItemNames}" />
+    </f:entry>
+</j:jelly>
