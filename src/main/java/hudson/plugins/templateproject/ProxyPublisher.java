@@ -1,38 +1,33 @@
 package hudson.plugins.templateproject;
 
 import java.io.IOException;
-import java.util.StringTokenizer;
 
-import javax.servlet.ServletException;
-
+import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
-import hudson.model.Build;
 import hudson.model.BuildListener;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.security.AccessControlled;
+import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Messages;
 import hudson.tasks.Publisher;
-import hudson.util.FormFieldValidator;
+import hudson.tasks.Recorder;
+import hudson.util.FormValidation;
 
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.QueryParameter;
 
-public class ProxyPublisher extends Publisher {
+public class ProxyPublisher extends Recorder {
 
 	private final String projectName;
 
 	@DataBoundConstructor
 	public ProxyPublisher(String projectName) {
 		this.projectName = projectName;
-	}
-
-	public Descriptor<Publisher> getDescriptor() {
-		return DESCRIPTOR;
 	}
 
 	public String getProjectName() {
@@ -44,13 +39,17 @@ public class ProxyPublisher extends Publisher {
 				.getItem(projectName);
 	}
 
+	public BuildStepMonitor getRequiredMonitorService() {
+		return BuildStepMonitor.STEP;
+	}
+
 	@Override
 	public boolean needsToRunAfterFinalized() {
 		return false;
 	}
 
 	@Override
-	public boolean prebuild(Build build, BuildListener listener) {
+	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
 		for (Publisher publisher : getProject().getPublishersList().toList()) {
 			if (!publisher.prebuild(build, listener)) {
 				return false;
@@ -70,8 +69,7 @@ public class ProxyPublisher extends Publisher {
 		return true;
 	}
 
-	public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
-
+	@Extension
 	public static class DescriptorImpl extends Descriptor<Publisher> {
 
 		@Override
@@ -82,30 +80,20 @@ public class ProxyPublisher extends Publisher {
 		/**
 		 * Form validation method.
 		 */
-		public void doCheck(StaplerRequest req, StaplerResponse rsp)
-				throws IOException, ServletException {
+		public FormValidation doCheck(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
 			// Require CONFIGURE permission on this project
-			AccessControlled anc = req
-					.findAncestorObject(AccessControlled.class);
-			new FormFieldValidator(req, rsp, anc, Item.CONFIGURE) {
-				protected void check() throws IOException, ServletException {
-					String projectName = request.getParameter("value");
-
-					Item item = Hudson.getInstance().getItemByFullName(
-							projectName, Item.class);
-					if (item == null) {
-						error(Messages.BuildTrigger_NoSuchProject(projectName,
-								AbstractProject.findNearest(projectName)
-										.getName()));
-						return;
-					}
-					if (!(item instanceof AbstractProject)) {
-						error(Messages.BuildTrigger_NotBuildable(projectName));
-						return;
-					}
-					ok();
-				}
-			}.process();
+			if (!anc.hasPermission(Item.CONFIGURE)) return FormValidation.ok();
+			Item item = Hudson.getInstance().getItemByFullName(
+					value, Item.class);
+			if (item == null) {
+				return FormValidation.error(Messages.BuildTrigger_NoSuchProject(value,
+						AbstractProject.findNearest(value)
+								.getName()));
+			}
+			if (!(item instanceof AbstractProject)) {
+				return FormValidation.error(Messages.BuildTrigger_NotBuildable(value));
+			}
+			return FormValidation.ok();
 		}
 	}
 
