@@ -11,7 +11,14 @@
   <version>1.1-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>Hudson Template Project plugin</name>
-  
+  <url>http://wiki.hudson-ci.org/display/HUDSON/Template+Project+Plugin</url>
+  <developers>
+    <developer>
+      <id>huybrechts</id>
+      <name>Tom Huybrechts</name>
+    </developer>
+  </developers>
+
   <build>
     <pluginManagement>
         <plugins>
