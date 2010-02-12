@@ -7,10 +7,10 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.security.AccessControlled;
+import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Messages;
 import hudson.tasks.Publisher;
@@ -70,17 +70,22 @@ public class ProxyPublisher extends Recorder {
 	}
 
 	@Extension
-	public static class DescriptorImpl extends Descriptor<Publisher> {
+	public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 
 		@Override
 		public String getDisplayName() {
 			return "Use publishers from another project";
 		}
 
+		@Override
+		public boolean isApplicable(Class<? extends hudson.model.AbstractProject> jobType) {
+			return true;
+		}
+
 		/**
 		 * Form validation method.
 		 */
-		public FormValidation doCheck(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
+		public FormValidation doCheckProjectName(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
 			// Require CONFIGURE permission on this project
 			if (!anc.hasPermission(Item.CONFIGURE)) return FormValidation.ok();
 			Item item = Hudson.getInstance().getItemByFullName(
