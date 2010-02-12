@@ -2,6 +2,7 @@ package hudson.plugins.templateproject;
 
 import hudson.Extension;
 import hudson.Launcher;
+import hudson.matrix.MatrixProject;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
@@ -15,6 +16,8 @@ import hudson.tasks.Messages;
 import hudson.util.FormValidation;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -33,9 +36,11 @@ public class ProxyBuilder extends Builder {
 		return projectName;
 	}
 
-	public Project<?, ?> getProject() {
-		return (Project<?, ?>) Hudson.getInstance()
-				.getItem(projectName);
+	public List<Builder> getProjectBuilders() {
+		AbstractProject p = (AbstractProject) Hudson.getInstance().getItem(projectName);
+		if (p instanceof Project) return ((Project)p).getBuilders();
+		else if (p instanceof MatrixProject) return ((MatrixProject)p).getBuilders();
+                else return Collections.emptyList();
 	}
 
 	@Extension
@@ -54,7 +59,7 @@ public class ProxyBuilder extends Builder {
 		/**
 		 * Form validation method.
 		 */
-		public FormValidation doCheck(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
+		public FormValidation doCheckProjectName(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
 			// Require CONFIGURE permission on this project
 			if (!anc.hasPermission(Item.CONFIGURE)) return FormValidation.ok();
 			Item item = Hudson.getInstance().getItemByFullName(
@@ -64,7 +69,7 @@ public class ProxyBuilder extends Builder {
 						AbstractProject.findNearest(value)
 								.getName()));
 			}
-			if (!(item instanceof AbstractProject)) {
+			if (!(item instanceof Project) && !(item instanceof MatrixProject)) {
 				return FormValidation.error(Messages.BuildTrigger_NotBuildable(value));
 			}
 			return FormValidation.ok();
@@ -74,7 +79,7 @@ public class ProxyBuilder extends Builder {
 	@Override
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
-		for (Builder builder: getProject().getBuilders()) {
+		for (Builder builder: getProjectBuilders()) {
 			if (!builder.perform(build, launcher, listener)) {
 				return false;
 			}
@@ -84,7 +89,7 @@ public class ProxyBuilder extends Builder {
 
 	@Override
 	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
-		for (Builder builder: getProject().getBuilders()) {
+		for (Builder builder: getProjectBuilders()) {
 			if (!builder.prebuild(build, listener)) {
 				return false;
 			}

@@ -78,7 +78,7 @@ public class ProxySCM extends SCM {
 		/**
 		 * Form validation method.
 		 */
-		public FormValidation doCheck(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
+		public FormValidation doCheckProjectName(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
 			// Require CONFIGURE permission on this project
 			if (!anc.hasPermission(Item.CONFIGURE)) return FormValidation.ok();
 			Item item = Hudson.getInstance().getItemByFullName(
