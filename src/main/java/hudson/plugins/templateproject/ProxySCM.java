@@ -3,24 +3,25 @@ package hudson.plugins.templateproject;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.model.BuildListener;
+import hudson.model.Item;
+import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
 import hudson.model.Hudson;
-import hudson.model.Item;
 import hudson.model.Node;
-import hudson.model.TaskListener;
 import hudson.scm.ChangeLogParser;
+import hudson.scm.PollingResult;
 import hudson.scm.RepositoryBrowser;
-import hudson.scm.SCM;
 import hudson.scm.SCMDescriptor;
+import hudson.scm.SCMRevisionState;
+import hudson.scm.SCM;
 import hudson.security.AccessControlled;
 import hudson.tasks.Messages;
 import hudson.util.FormValidation;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -45,26 +46,12 @@ public class ProxySCM extends SCM {
 	}
 
 	@Override
-	public boolean checkout(AbstractBuild build, Launcher launcher,
-			FilePath workspace, BuildListener listener, File changelogFile)
-			throws IOException, InterruptedException {
-		return getProject().getScm().checkout(build, launcher, workspace, listener, changelogFile);
-	}
-
-	@Override
 	public ChangeLogParser createChangeLogParser() {
 		return getProject().getScm().createChangeLogParser();
 	}
 
-	@Override
-	public boolean pollChanges(AbstractProject project, Launcher launcher,
-			FilePath workspace, TaskListener listener) throws IOException,
-			InterruptedException {
-		return getProject().getScm().pollChanges(project, launcher, workspace, listener);
-	}
-
 	@Extension
-	public static class DescriptorImpl extends SCMDescriptor {
+	public static class DescriptorImpl extends SCMDescriptor<SCM> {
 
 		public DescriptorImpl() {
 			super(null);
@@ -74,7 +61,7 @@ public class ProxySCM extends SCM {
 		public String getDisplayName() {
 			return "Use SCM from another project";
 		}
-		
+
 		/**
 		 * Form validation method.
 		 */
@@ -96,12 +83,7 @@ public class ProxySCM extends SCM {
 	}
 
 	@Override
-	public void buildEnvVars(AbstractBuild build, Map<String, String> env) {
-		getProject().getScm().buildEnvVars(build, env);
-	}
-
-	@Override
-	public RepositoryBrowser getBrowser() {
+	public RepositoryBrowser<?> getBrowser() {
 		return getProject().getScm().getBrowser();
 	}
 
@@ -131,5 +113,23 @@ public class ProxySCM extends SCM {
 	public boolean supportsPolling() {
 		return getProject().getScm().supportsPolling();
 	}
+
+    @Override
+    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> build, Launcher launcher, TaskListener listener) throws IOException,
+            InterruptedException {
+        return getProject().getScm().calcRevisionsFromBuild(build, launcher, listener);
+    }
+
+    @Override
+    protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener,
+            SCMRevisionState baseline) throws IOException, InterruptedException {
+        return getProject().getScm().poll(project, launcher, workspace, listener, baseline);
+    }
+
+    @Override
+    public boolean checkout(AbstractBuild<?, ?> build, Launcher launcher, FilePath workspace, BuildListener listener, File changelogFile) throws IOException,
+            InterruptedException {
+        return getProject().getScm().checkout(build, launcher, workspace, listener, changelogFile);
+    }
 
 }
