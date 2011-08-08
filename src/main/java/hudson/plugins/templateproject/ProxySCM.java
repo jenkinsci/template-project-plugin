@@ -98,6 +98,11 @@ public class ProxySCM extends SCM {
 	}
 
 	@Override
+    public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener) throws IOException, InterruptedException {
+        return getProject().getScm().pollChanges(project, launcher, workspace, listener);
+    }
+
+	@Override
 	public boolean processWorkspaceBeforeDeletion(
 			AbstractProject<?, ?> project, FilePath workspace, Node node)
 			throws IOException, InterruptedException {
