@@ -36,6 +36,10 @@ public class ProxyBuilder extends Builder {
 		return projectName;
 	}
 
+    public Item getJob() {
+        return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
+    }
+    
 	public List<Builder> getProjectBuilders() {
 		AbstractProject p = (AbstractProject) Hudson.getInstance().getItem(projectName);
 		if (p instanceof Project) return ((Project)p).getBuilders();
