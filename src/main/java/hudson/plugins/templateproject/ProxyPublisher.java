@@ -1,11 +1,15 @@
 package hudson.plugins.templateproject;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.Hudson;
 import hudson.model.Item;
@@ -67,6 +71,19 @@ public class ProxyPublisher extends Recorder {
 			}
 		}
 		return true;
+	}
+
+	@Override
+	public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
+		List<Action> actions = new ArrayList<Action>();
+		// project might not defined when loading the first time
+		AbstractProject<?, ?> templateProject = getProject();
+		if (templateProject != null) {
+			for (Publisher publisher : templateProject.getPublishersList().toList()) {
+				actions.addAll(publisher.getProjectActions(project));
+			}
+		}
+		return actions;
 	}
 
 	@Extension
