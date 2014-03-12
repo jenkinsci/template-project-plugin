@@ -23,6 +23,7 @@ import hudson.util.FormValidation;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -83,12 +84,15 @@ public class ProxySCM extends SCM {
 		public FormValidation doCheckProjectName(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
 			// Require CONFIGURE permission on this project
 			if (!anc.hasPermission(Item.CONFIGURE)) return FormValidation.ok();
-			Item item = Hudson.getInstance().getItemByFullName(
-					value, Item.class);
-			if (item == null) {
+            //this check is important because otherwise plugin will check for similar project which impacts performance
+            //the check will be performed even if this plugin is not used as SCM for the current project
+            if(StringUtils.isEmpty(value)) {
+                return FormValidation.error("Project cannot be empty");
+            }
+            Item item = Hudson.getInstance().getItemByFullName(value, Item.class);
+            if (item == null) {
 				return FormValidation.error(Messages.BuildTrigger_NoSuchProject(value,
-						AbstractProject.findNearest(value)
-								.getName()));
+						AbstractProject.findNearest(value).getName()));
 			}
 			if (!(item instanceof AbstractProject)) {
 				return FormValidation.error(Messages.BuildTrigger_NotBuildable(value));
