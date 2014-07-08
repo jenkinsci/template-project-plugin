@@ -7,6 +7,8 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
+import hudson.model.DependecyDeclarer;
+import hudson.model.DependencyGraph;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.Project;
@@ -27,7 +29,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-public class ProxyBuilder extends Builder {
+public class ProxyBuilder extends Builder implements DependecyDeclarer {
 
 	private final String projectName;
 
@@ -47,6 +49,19 @@ public class ProxyBuilder extends Builder {
                 else return Collections.emptyList();
 	}
 
+	@Override
+	public void buildDependencyGraph(AbstractProject project, DependencyGraph graph) {
+		AbstractProject<?, ?> templateProject = (AbstractProject) Hudson.getInstance().getItem(getProjectName());
+		if (templateProject != null) {
+			for (Publisher publisher : templateProject.getPublishersList().toList()) {
+				if (publisher instanceof DependecyDeclarer) {
+					((DependecyDeclarer)publisher).buildDependencyGraph(project, graph);
+				}
+			}
+		}
+	}
+
+	
 	@Extension
 	public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
