@@ -11,6 +11,8 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
 import hudson.model.BuildListener;
+import hudson.model.DependecyDeclarer;
+import hudson.model.DependencyGraph;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.security.AccessControlled;
@@ -25,7 +27,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-public class ProxyPublisher extends Recorder {
+public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 
 	private final String projectName;
 
@@ -84,6 +86,22 @@ public class ProxyPublisher extends Recorder {
 			}
 		}
 		return actions;
+	}
+
+	/**
+	 * Any of the publisher could support the DependecyDeclarer interface,
+	 *  so proxy will handle it as well.
+	 *  {@inheritDoc} 
+	 */
+	public void buildDependencyGraph(AbstractProject project, DependencyGraph graph) {
+		AbstractProject<?, ?> templateProject = getProject();
+		if (templateProject != null) {
+			for (Publisher publisher : templateProject.getPublishersList().toList()) {
+				if (publisher instanceof DependecyDeclarer) {
+					((DependecyDeclarer)publisher).buildDependencyGraph(project, graph);
+				}
+			}
+		}
 	}
 
 	@Extension
