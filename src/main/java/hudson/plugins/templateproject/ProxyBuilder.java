@@ -43,7 +43,7 @@ public class ProxyBuilder extends Builder implements DependecyDeclarer {
 	}
 
 	public List<Builder> getProjectBuilders() {
-		AbstractProject p = (AbstractProject) Hudson.getInstance().getItem(projectName);
+		AbstractProject p = (AbstractProject) Hudson.getInstance().getItemByFullName(projectName);
 		if (p instanceof Project) return ((Project)p).getBuilders();
 		else if (p instanceof MatrixProject) return ((MatrixProject)p).getBuilders();
                 else return Collections.emptyList();
