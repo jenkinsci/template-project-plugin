@@ -43,7 +43,7 @@ public class ProxySCM extends SCM {
 
 	public AbstractProject<?, ?> getProject() {
 		return (AbstractProject<?, ?>) Hudson.getInstance()
-				.getItem(projectName);
+				.getItemByFullName(projectName);
 	}
 
 	@Override
