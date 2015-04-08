@@ -21,13 +21,13 @@ public class UpdateTransientProperty extends JobProperty<AbstractProject<?, ?>> 
 	}
 	
 	@Extension
-    public static class DescriptorImpl extends JobPropertyDescriptor {
+	public static class DescriptorImpl extends JobPropertyDescriptor {
 
 		@Override
 		public String getDisplayName() {
 			return "Property used to for job to update transient actions.";
 		}
-    	
-    }	
+
+	}
 	
 }
