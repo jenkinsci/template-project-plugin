@@ -19,6 +19,8 @@ import hudson.tasks.Messages;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 
+import jenkins.model.Jenkins;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -99,9 +101,12 @@ public class ProxyBuilder extends Builder implements DependecyDeclarer {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		for (Builder builder: getProjectBuilders()) {
+			listener.getLogger().println("[TemplateProject] Starting builders from: '" + getProjectName() + "'");
 			if (!builder.perform(build, launcher, listener)) {
+				listener.getLogger().println("[TemplateProject] FAILED performing builders from: '" + getProjectName() + "'");
 				return false;
 			}
+			listener.getLogger().println("[TemplateProject] Successfully performed builders from: '" + getProjectName() + "'");
 		}
 		return true;
 	}

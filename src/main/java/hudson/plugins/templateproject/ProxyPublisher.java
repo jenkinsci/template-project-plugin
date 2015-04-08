@@ -23,6 +23,8 @@ import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 
+import jenkins.model.Jenkins;
+
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -68,9 +70,12 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		for (Publisher publisher : getProject().getPublishersList().toList()) {
+			listener.getLogger().println("[TemplateProject] Starting publishers from: '" + getProjectName() + "'");
 			if (!publisher.perform(build, launcher, listener)) {
+				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + getProjectName() + "'");
 				return false;
 			}
+			listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + getProjectName() + "'");
 		}
 		return true;
 	}
