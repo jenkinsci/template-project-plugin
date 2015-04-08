@@ -132,6 +132,10 @@ public class ProxySCM extends SCM {
 	public boolean supportsPolling() {
 		return getProject().getScm().supportsPolling();
 	}
+	@Override
+	public void buildEnvVars(AbstractBuild<?, ?> build, java.util.Map<String, String> env) {
+		getProject().getScm().buildEnvVars(build, env);
+	}
 
     @Override
     public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> paramAbstractBuild, Launcher paramLauncher, TaskListener paramTaskListener) throws IOException, InterruptedException {
