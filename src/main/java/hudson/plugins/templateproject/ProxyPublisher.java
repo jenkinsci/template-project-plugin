@@ -46,7 +46,7 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 	}
 
 	public BuildStepMonitor getRequiredMonitorService() {
-		return BuildStepMonitor.STEP;
+		return BuildStepMonitor.NONE;
 	}
 
 	@Override
