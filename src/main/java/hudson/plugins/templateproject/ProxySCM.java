@@ -50,6 +50,7 @@ public class ProxySCM extends SCM {
 	public boolean checkout(AbstractBuild build, Launcher launcher,
 			FilePath workspace, BuildListener listener, File changelogFile)
 			throws IOException, InterruptedException {
+		listener.getLogger().println("[TemplateProject] Using SCM from: '" + getProjectName() + "'");
 		return getProject().getScm().checkout(build, launcher, workspace, listener, changelogFile);
 	}
 
@@ -138,13 +139,15 @@ public class ProxySCM extends SCM {
 	}
 
 	@Override
-	public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> paramAbstractBuild, Launcher paramLauncher, TaskListener paramTaskListener) throws IOException, InterruptedException {
+	public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> paramAbstractBuild, Launcher paramLauncher,
+			TaskListener paramTaskListener) throws IOException, InterruptedException {
 		return getProject().getScm().calcRevisionsFromBuild(paramAbstractBuild, paramLauncher, paramTaskListener);
 	}
 
 
 	@Override
-	protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState baseline)
+	protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher,
+			FilePath workspace, TaskListener listener, SCMRevisionState baseline)
 			throws IOException, InterruptedException {
 		return getProject().getScm().poll(project, launcher, workspace, listener, baseline);
 	}
