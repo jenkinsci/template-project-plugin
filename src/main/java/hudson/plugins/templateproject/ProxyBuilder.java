@@ -9,6 +9,7 @@ import hudson.model.Action;
 import hudson.model.BuildListener;
 import hudson.model.DependecyDeclarer;
 import hudson.model.DependencyGraph;
+import hudson.model.TopLevelItem;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.model.Project;
@@ -51,11 +52,12 @@ public class ProxyBuilder extends Builder implements DependecyDeclarer {
 
 	@Override
 	public void buildDependencyGraph(AbstractProject project, DependencyGraph graph) {
-		AbstractProject<?, ?> templateProject = (AbstractProject) Hudson.getInstance().getItem(getProjectName());
-		if (templateProject != null) {
-			for (Publisher publisher : templateProject.getPublishersList().toList()) {
-				if (publisher instanceof DependecyDeclarer) {
-					((DependecyDeclarer)publisher).buildDependencyGraph(project, graph);
+		Item item = Hudson.getInstance().getItemByFullName(getProjectName());
+		if (item instanceof Project) {
+			Project<?, ?> templateProject = (Project)item;
+			for (Builder builder : templateProject.getBuildersList().toList()) {
+				if (builder instanceof DependecyDeclarer) {
+					((DependecyDeclarer)builder).buildDependencyGraph(project, graph);
 				}
 			}
 		}
