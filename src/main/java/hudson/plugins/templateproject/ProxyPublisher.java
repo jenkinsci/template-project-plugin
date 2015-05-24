@@ -1,12 +1,18 @@
 package hudson.plugins.templateproject;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.Action;
 import hudson.model.BuildListener;
+import hudson.model.DependecyDeclarer;
+import hudson.model.DependencyGraph;
 import hudson.model.Hudson;
 import hudson.model.Item;
 import hudson.security.AccessControlled;
@@ -17,11 +23,13 @@ import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 
+import jenkins.model.Jenkins;
+
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-public class ProxyPublisher extends Recorder {
+public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 
 	private final String projectName;
 
@@ -40,11 +48,11 @@ public class ProxyPublisher extends Recorder {
 
 	public AbstractProject<?, ?> getProject() {
 		return (AbstractProject<?, ?>) Hudson.getInstance()
-				.getItem(projectName);
+				.getItemByFullName(projectName);
 	}
 
 	public BuildStepMonitor getRequiredMonitorService() {
-		return BuildStepMonitor.STEP;
+		return BuildStepMonitor.NONE;
 	}
 
 	@Override
@@ -66,11 +74,43 @@ public class ProxyPublisher extends Recorder {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		for (Publisher publisher : getProject().getPublishersList().toList()) {
+			listener.getLogger().println("[TemplateProject] Starting publishers from: '" + getProjectName() + "'");
 			if (!publisher.perform(build, launcher, listener)) {
+				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + getProjectName() + "'");
 				return false;
 			}
+			listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + getProjectName() + "'");
 		}
 		return true;
+	}
+
+	@Override
+	public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
+		List<Action> actions = new ArrayList<Action>();
+		// project might not defined when loading the first time
+		AbstractProject<?, ?> templateProject = getProject();
+		if (templateProject != null) {
+			for (Publisher publisher : templateProject.getPublishersList().toList()) {
+				actions.addAll(publisher.getProjectActions(project));
+			}
+		}
+		return actions;
+	}
+
+	/**
+	 * Any of the publisher could support the DependecyDeclarer interface,
+	 *  so proxy will handle it as well.
+	 *  {@inheritDoc} 
+	 */
+	public void buildDependencyGraph(AbstractProject project, DependencyGraph graph) {
+		AbstractProject<?, ?> templateProject = getProject();
+		if (templateProject != null) {
+			for (Publisher publisher : templateProject.getPublishersList().toList()) {
+				if (publisher instanceof DependecyDeclarer) {
+					((DependecyDeclarer)publisher).buildDependencyGraph(project, graph);
+				}
+			}
+		}
 	}
 
 	@Extension
