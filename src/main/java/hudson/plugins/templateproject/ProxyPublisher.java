@@ -34,10 +34,10 @@ public class ProxyPublisher extends Recorder {
 		return projectName;
 	}
 
-    public Item getJob() {
-        return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
-    }
-    
+	public Item getJob() {
+		return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
+	}
+
 	public AbstractProject<?, ?> getProject() {
 		return (AbstractProject<?, ?>) Hudson.getInstance()
 				.getItem(projectName);

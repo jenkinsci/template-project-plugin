@@ -40,10 +40,10 @@ public class ProxySCM extends SCM {
 		return projectName;
 	}
 
-    public Item getJob() {
-        return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
-    }
-    
+	public Item getJob() {
+		return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
+	}
+
 	public AbstractProject<?, ?> getProject() {
 		return (AbstractProject<?, ?>) Hudson.getInstance()
 				.getItem(projectName);
@@ -133,17 +133,17 @@ public class ProxySCM extends SCM {
 		return getProject().getScm().supportsPolling();
 	}
 
-    @Override
-    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> paramAbstractBuild, Launcher paramLauncher, TaskListener paramTaskListener) throws IOException, InterruptedException {
-        return getProject().getScm().calcRevisionsFromBuild(paramAbstractBuild, paramLauncher, paramTaskListener);
-    }
+	@Override
+	public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> paramAbstractBuild, Launcher paramLauncher, TaskListener paramTaskListener) throws IOException, InterruptedException {
+		return getProject().getScm().calcRevisionsFromBuild(paramAbstractBuild, paramLauncher, paramTaskListener);
+	}
 
 
-    @Override
-    protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState baseline)
-            throws IOException, InterruptedException {
-            return getProject().getScm().poll(project, launcher, workspace, listener, baseline);
+	@Override
+	protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState baseline)
+			throws IOException, InterruptedException {
+			return getProject().getScm().poll(project, launcher, workspace, listener, baseline);
 
-    }
+	}
 
 }
