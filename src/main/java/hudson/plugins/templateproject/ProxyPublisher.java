@@ -42,6 +42,10 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 		return projectName;
 	}
 
+	public Item getJob() {
+		return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
+	}
+
 	public AbstractProject<?, ?> getProject() {
 		return (AbstractProject<?, ?>) Hudson.getInstance()
 				.getItemByFullName(projectName);

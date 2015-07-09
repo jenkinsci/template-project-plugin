@@ -2,5 +2,6 @@
     <f:entry title="${%Template Project}"
              description="Use all SCM settings from this project.">
         <f:editableComboBox field="projectName" items="${app.topLevelItemNames}" />
+        <t:jobLink job="${instance.job}" />
     </f:entry>
 </j:jelly>
