@@ -112,7 +112,16 @@ public class ProxyBuilder extends Builder implements DependecyDeclarer {
 				listener.getLogger().println("[TemplateProject] FAILED performing builders from: '" + getProjectName() + "'");
 				return false;
 			}
-			listener.getLogger().println("[TemplateProject] Successfully performed builders from: '" + getProjectName() + "'");
+            String URLTemplateLink;
+            listener.getLogger().println("Starting template job: " + getProjectName());
+            if (Jenkins.getInstance().getRootUrl() == null){
+                listener.getLogger().println("Could not get URL from configuration, change URL settings in \"Manage Jenkins->Configure System\"");
+                listener.getLogger().println("If you set this, a link to the template job will be displayed instead");
+            } else {
+                URLTemplateLink = Jenkins.getInstance().getRootUrl() + "job/" + getProjectName();
+                listener.getLogger().println(URLTemplateLink);
+            }
+            listener.getLogger().println("[TemplateProject] Successfully performed builders from: '" + getProjectName() + "'");
 		}
 		return true;
 	}
