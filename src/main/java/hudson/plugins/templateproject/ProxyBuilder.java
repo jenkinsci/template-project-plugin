@@ -89,14 +89,14 @@ public class ProxyBuilder extends Builder {
 			if (!builder.perform(build, launcher, listener)) {
 				return false;
 			}
-        String URLConfigureTemplate;
+        String URLTemplateLink;
+        listener.getLogger().println("Starting template job: " + getProjectName());
         if (Jenkins.getInstance().getRootUrl() == null){
-            listener.getLogger().println("Starting template job: " + getProjectName());
             listener.getLogger().println("Could not get URL from configuration, change URL settings in \"Manage Jenkins->Configure System\"");
             listener.getLogger().println("If you set this a link to the configuration of the template job will be displayed instead");
         } else {
-            URLConfigureTemplate = Jenkins.getInstance().getRootUrl() + "job/" + getProjectName() + "/configure";
-            listener.getLogger().println(URLConfigureTemplate);
+            URLTemplateLink = Jenkins.getInstance().getRootUrl() + "job/" + getProjectName();
+            listener.getLogger().println(URLTemplateLink);
         }
 	}
 		return true;
