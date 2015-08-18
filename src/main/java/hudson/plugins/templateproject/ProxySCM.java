@@ -23,6 +23,7 @@ import hudson.util.FormValidation;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -40,15 +41,20 @@ public class ProxySCM extends SCM {
 		return projectName;
 	}
 
+	public Item getJob() {
+		return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
+	}
+
 	public AbstractProject<?, ?> getProject() {
 		return (AbstractProject<?, ?>) Hudson.getInstance()
-				.getItem(projectName);
+				.getItemByFullName(projectName);
 	}
 
 	@Override
 	public boolean checkout(AbstractBuild build, Launcher launcher,
 			FilePath workspace, BuildListener listener, File changelogFile)
 			throws IOException, InterruptedException {
+		listener.getLogger().println("[TemplateProject] Using SCM from: '" + getProjectName() + "'");
 		return getProject().getScm().checkout(build, launcher, workspace, listener, changelogFile);
 	}
 
@@ -83,12 +89,15 @@ public class ProxySCM extends SCM {
 		public FormValidation doCheckProjectName(@AncestorInPath AccessControlled anc, @QueryParameter String value) {
 			// Require CONFIGURE permission on this project
 			if (!anc.hasPermission(Item.CONFIGURE)) return FormValidation.ok();
-			Item item = Hudson.getInstance().getItemByFullName(
-					value, Item.class);
+			//this check is important because otherwise plugin will check for similar project which impacts performance
+			//the check will be performed even if this plugin is not used as SCM for the current project
+			if(StringUtils.isEmpty(value)) {
+				return FormValidation.error("Project cannot be empty");
+			}
+			Item item = Hudson.getInstance().getItemByFullName(value, Item.class);
 			if (item == null) {
 				return FormValidation.error(Messages.BuildTrigger_NoSuchProject(value,
-						AbstractProject.findNearest(value)
-								.getName()));
+						AbstractProject.findNearest(value).getName()));
 			}
 			if (!(item instanceof AbstractProject)) {
 				return FormValidation.error(Messages.BuildTrigger_NotBuildable(value));
@@ -128,18 +137,23 @@ public class ProxySCM extends SCM {
 	public boolean supportsPolling() {
 		return getProject().getScm().supportsPolling();
 	}
+	@Override
+	public void buildEnvVars(AbstractBuild<?, ?> build, java.util.Map<String, String> env) {
+		getProject().getScm().buildEnvVars(build, env);
+	}
 
-    @Override
-    public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> paramAbstractBuild, Launcher paramLauncher, TaskListener paramTaskListener) throws IOException, InterruptedException {
-        return getProject().getScm().calcRevisionsFromBuild(paramAbstractBuild, paramLauncher, paramTaskListener);
-    }
+	@Override
+	public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> paramAbstractBuild, Launcher paramLauncher,
+			TaskListener paramTaskListener) throws IOException, InterruptedException {
+		return getProject().getScm().calcRevisionsFromBuild(paramAbstractBuild, paramLauncher, paramTaskListener);
+	}
 
 
-    @Override
-    protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher, FilePath workspace, TaskListener listener, SCMRevisionState baseline)
-            throws IOException, InterruptedException {
-            return getProject().getScm().poll(project, launcher, workspace, listener, baseline);
-
-    }
+	@Override
+	protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher,
+			FilePath workspace, TaskListener listener, SCMRevisionState baseline)
+			throws IOException, InterruptedException {
+		return getProject().getScm().poll(project, launcher, workspace, listener, baseline);
+	}
 
 }
