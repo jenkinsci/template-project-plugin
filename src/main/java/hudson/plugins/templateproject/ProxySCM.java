@@ -3,6 +3,7 @@ package hudson.plugins.templateproject;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.console.HyperlinkNote;
 import hudson.Util;
 import hudson.model.BuildListener;
 import hudson.model.Item;
@@ -55,6 +56,7 @@ public class ProxySCM extends SCM {
 		return TemplateUtils.getExpandedProjectName(projectName, build);
 	}
 
+	// Primarily used for polling, not building.
 	public AbstractProject<?, ?> getProject() {
 		return TemplateUtils.getProject(projectName, null);
 	}
@@ -85,7 +87,8 @@ public class ProxySCM extends SCM {
 			}
 		}
 
-		listener.getLogger().println("[TemplateProject] Using SCM from: '" + getExpandedProjectName((AbstractBuild) build) + "'");
+		AbstractProject p = TemplateUtils.getProject(getProjectName(), (AbstractBuild) build);
+		listener.getLogger().println("[TemplateProject] Using SCM from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
 		getProjectScm((AbstractBuild) build).checkout(build, launcher, workspace, listener, changelogFile, baseline);
 	}
 

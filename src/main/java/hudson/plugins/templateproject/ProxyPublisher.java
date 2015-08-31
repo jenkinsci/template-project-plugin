@@ -1,12 +1,8 @@
 package hudson.plugins.templateproject;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import hudson.Extension;
 import hudson.Launcher;
+import hudson.console.HyperlinkNote;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
@@ -22,6 +18,11 @@ import hudson.tasks.Messages;
 import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import jenkins.model.Jenkins;
 
@@ -79,12 +80,13 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 			BuildListener listener) throws InterruptedException, IOException {
 		boolean publishersResult = true;
 		for (Publisher publisher : getProjectPublishersList(build)) {
-			listener.getLogger().println("[TemplateProject] Starting publishers from: '" + getExpandedProjectName(build) + "'");
+			AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
+			listener.getLogger().println("[TemplateProject] Starting publishers from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
 			if (!publisher.perform(build, launcher, listener)) {
-				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + getExpandedProjectName(build) + "'");
+				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + p.getFullDisplayName() + "'");
 				publishersResult = false;
 			} else {
-				listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + getExpandedProjectName(build) + "'");
+				listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + p.getFullDisplayName() + "'");
 			}
 		}
 		return publishersResult;

@@ -2,6 +2,7 @@ package hudson.plugins.templateproject;
 
 import hudson.Extension;
 import hudson.Launcher;
+import hudson.console.HyperlinkNote;
 import hudson.matrix.MatrixProject;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -19,13 +20,13 @@ import hudson.tasks.Messages;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 
-import jenkins.model.Jenkins;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import jenkins.model.Jenkins;
 
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -106,12 +107,13 @@ public class ProxyBuilder extends Builder implements DependecyDeclarer {
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
 		for (Builder builder: getProjectBuilders(build)) {
-			listener.getLogger().println("[TemplateProject] Starting builders from: '" + getExpandedProjectName(build) + "'");
+			AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
+			listener.getLogger().println("[TemplateProject] Starting builders from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
 			if (!builder.perform(build, launcher, listener)) {
-				listener.getLogger().println("[TemplateProject] FAILED performing builders from: '" + getExpandedProjectName(build) + "'");
+				listener.getLogger().println("[TemplateProject] FAILED performing builders from: '" + p.getFullDisplayName() + "'");
 				return false;
 			}
-			listener.getLogger().println("[TemplateProject] Successfully performed builders from: '" + getExpandedProjectName(build) + "'");
+			listener.getLogger().println("[TemplateProject] Successfully performed builders from: '" + p.getFullDisplayName() + "'");
 		}
 		return true;
 	}
