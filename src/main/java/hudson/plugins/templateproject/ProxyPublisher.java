@@ -77,15 +77,17 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 	@Override
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
+		boolean publishersResult = true;
 		for (Publisher publisher : getProjectPublishersList(build)) {
 			listener.getLogger().println("[TemplateProject] Starting publishers from: '" + getExpandedProjectName(build) + "'");
 			if (!publisher.perform(build, launcher, listener)) {
 				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + getExpandedProjectName(build) + "'");
-				return false;
+				publishersResult = false;
+			} else {
+				listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + getExpandedProjectName(build) + "'");
 			}
-			listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + getExpandedProjectName(build) + "'");
 		}
-		return true;
+		return publishersResult;
 	}
 
 	@Override
