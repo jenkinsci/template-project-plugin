@@ -83,10 +83,10 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 			AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
 			listener.getLogger().println("[TemplateProject] Starting publishers from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
 			if (!publisher.perform(build, launcher, listener)) {
-				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + getExpandedProjectName(build) + "'");
+				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + p.getFullDisplayName() + "'");
 				publishersResult = false;
 			} else {
-				listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + getExpandedProjectName(build) + "'");
+				listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + p.getFullDisplayName() + "'");
 			}
 		}
 		return publishersResult;

@@ -110,10 +110,10 @@ public class ProxyBuilder extends Builder implements DependecyDeclarer {
 			AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
 			listener.getLogger().println("[TemplateProject] Starting builders from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
 			if (!builder.perform(build, launcher, listener)) {
-				listener.getLogger().println("[TemplateProject] FAILED performing builders from: '" + getExpandedProjectName(build) + "'");
+				listener.getLogger().println("[TemplateProject] FAILED performing builders from: '" + p.getFullDisplayName() + "'");
 				return false;
 			}
-			listener.getLogger().println("[TemplateProject] Successfully performed builders from: '" + getExpandedProjectName(build) + "'");
+			listener.getLogger().println("[TemplateProject] Successfully performed builders from: '" + p.getFullDisplayName() + "'");
 		}
 		return true;
 	}
