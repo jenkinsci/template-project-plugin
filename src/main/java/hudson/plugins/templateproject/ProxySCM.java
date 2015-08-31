@@ -3,6 +3,7 @@ package hudson.plugins.templateproject;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.Util;
 import hudson.model.BuildListener;
 import hudson.model.Item;
 import hudson.model.TaskListener;
@@ -10,7 +11,9 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Hudson;
 import hudson.model.Node;
+import hudson.model.Run;
 import hudson.scm.ChangeLogParser;
+import hudson.scm.NullSCM;
 import hudson.scm.PollingResult;
 import hudson.scm.RepositoryBrowser;
 import hudson.scm.SCMDescriptor;
@@ -22,11 +25,18 @@ import hudson.util.FormValidation;
 
 import java.io.File;
 import java.io.IOException;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
+
+import java.util.List;
+import org.jenkinsci.plugins.multiplescms.MultiSCM;
+import org.jenkinsci.plugins.multiplescms.MultiSCMRevisionState;
+
 
 public class ProxySCM extends SCM {
 
@@ -41,26 +51,47 @@ public class ProxySCM extends SCM {
 		return projectName;
 	}
 
-	public Item getJob() {
-		return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
+	public String getExpandedProjectName(AbstractBuild<?, ?> build) {
+		return TemplateUtils.getExpandedProjectName(projectName, build);
 	}
 
 	public AbstractProject<?, ?> getProject() {
-		return (AbstractProject<?, ?>) Hudson.getInstance()
-				.getItemByFullName(projectName);
+		return TemplateUtils.getProject(projectName, null);
 	}
 
-	@Override
-	public boolean checkout(AbstractBuild build, Launcher launcher,
-			FilePath workspace, BuildListener listener, File changelogFile)
+	public SCM getProjectScm(AbstractBuild<?, ?> build) {
+		try {
+			return TemplateUtils.getProject(projectName, build).getScm();
+		} catch (Exception e) {
+			return new NullSCM();
+		}
+	}
+
+	public SCM getProjectScm() {
+		return getProjectScm(null);
+	}
+
+	public void checkout(@Nonnull Run<?,?> build, @Nonnull Launcher launcher, @Nonnull FilePath workspace,
+			@Nonnull TaskListener listener, @CheckForNull File changelogFile, @CheckForNull SCMRevisionState baseline)
 			throws IOException, InterruptedException {
-		listener.getLogger().println("[TemplateProject] Using SCM from: '" + getProjectName() + "'");
-		return getProject().getScm().checkout(build, launcher, workspace, listener, changelogFile);
+
+		// Unique situation where MultiSCM has $None for SCMRevisionState
+		// Potentially due to SCM polling and references lost, or fixed with:
+		// https://github.com/jenkinsci/multiple-scms-plugin/pull/6
+		// https://issues.jenkins-ci.org/browse/JENKINS-27638
+		if (getProjectScm((AbstractBuild) build) instanceof MultiSCM) {
+			if ((baseline == SCMRevisionState.NONE) || (baseline == null)) {
+				baseline = new MultiSCMRevisionState();
+			}
+		}
+
+		listener.getLogger().println("[TemplateProject] Using SCM from: '" + getExpandedProjectName((AbstractBuild) build) + "'");
+		getProjectScm((AbstractBuild) build).checkout(build, launcher, workspace, listener, changelogFile, baseline);
 	}
 
 	@Override
 	public ChangeLogParser createChangeLogParser() {
-		return getProject().getScm().createChangeLogParser();
+		return getProjectScm().createChangeLogParser();
 	}
 
 	@Override
@@ -68,7 +99,7 @@ public class ProxySCM extends SCM {
 	public boolean pollChanges(AbstractProject project, Launcher launcher,
 			FilePath workspace, TaskListener listener) throws IOException,
 			InterruptedException {
-		return getProject().getScm().pollChanges(project, launcher, workspace, listener);
+		return getProjectScm().pollChanges(project, launcher, workspace, listener);
 	}
 
 	@Extension
@@ -106,46 +137,56 @@ public class ProxySCM extends SCM {
 		}
 	}
 
+	// If a Parameter is used for projectName, some of these won't return anythign useful.
+	// Because of it's nature `expand()`-ing the parameter is only useful at run time.
+
 	@Override
 	public RepositoryBrowser getBrowser() {
-		return getProject().getScm().getBrowser();
+		return getProjectScm().getBrowser();
 	}
 
 	@Override
 	public FilePath getModuleRoot(FilePath workspace) {
-		return getProject().getScm().getModuleRoot(workspace);
+		return getProjectScm().getModuleRoot(workspace);
 	}
 
 	@Override
 	public FilePath[] getModuleRoots(FilePath workspace) {
-		return getProject().getScm().getModuleRoots(workspace);
+		return getProjectScm().getModuleRoots(workspace);
 	}
 
 	@Override
 	public boolean processWorkspaceBeforeDeletion(
 			AbstractProject<?, ?> project, FilePath workspace, Node node)
 			throws IOException, InterruptedException {
-		return getProject().getScm().processWorkspaceBeforeDeletion(project, workspace, node);
+		return getProjectScm().processWorkspaceBeforeDeletion(project, workspace, node);
 	}
 
 	@Override
 	public boolean requiresWorkspaceForPolling() {
-		return getProject().getScm().requiresWorkspaceForPolling();
+		return getProjectScm().requiresWorkspaceForPolling();
 	}
 
 	@Override
 	public boolean supportsPolling() {
-		return getProject().getScm().supportsPolling();
+		// @TODO: worth adding check if expandedProjectName even exists?
+		// If still $PROJECT, won't expand so nothing to poll.
+		return getProjectScm().supportsPolling();
 	}
+
 	@Override
 	public void buildEnvVars(AbstractBuild<?, ?> build, java.util.Map<String, String> env) {
-		getProject().getScm().buildEnvVars(build, env);
+		// Limitation : Currently only supports build variable for replacement.
+		// Gets into infinite loop using `getEnvironment() since it loops
+		// back to `getScm().buildEnvVars()`
+		String pName = Util.replaceMacro(getProjectName(), build.getBuildVariables());
+		getProjectScm().buildEnvVars(build, env);
 	}
 
 	@Override
 	public SCMRevisionState calcRevisionsFromBuild(AbstractBuild<?, ?> paramAbstractBuild, Launcher paramLauncher,
 			TaskListener paramTaskListener) throws IOException, InterruptedException {
-		return getProject().getScm().calcRevisionsFromBuild(paramAbstractBuild, paramLauncher, paramTaskListener);
+		return getProjectScm(paramAbstractBuild).calcRevisionsFromBuild(paramAbstractBuild, paramLauncher, paramTaskListener);
 	}
 
 
@@ -153,7 +194,7 @@ public class ProxySCM extends SCM {
 	protected PollingResult compareRemoteRevisionWith(AbstractProject<?, ?> project, Launcher launcher,
 			FilePath workspace, TaskListener listener, SCMRevisionState baseline)
 			throws IOException, InterruptedException {
-		return getProject().getScm().poll(project, launcher, workspace, listener, baseline);
+		return getProjectScm().poll(project, launcher, workspace, listener, baseline);
 	}
 
 }
