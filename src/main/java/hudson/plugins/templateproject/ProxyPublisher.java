@@ -42,13 +42,12 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 		return projectName;
 	}
 
-	public Item getJob() {
-		return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
+	public String getExpandedProjectName(AbstractBuild<?, ?> build) {
+		return TemplateUtils.getExpandedProjectName(projectName, build);
 	}
 
 	public AbstractProject<?, ?> getProject() {
-		return (AbstractProject<?, ?>) Hudson.getInstance()
-				.getItemByFullName(projectName);
+		return TemplateUtils.getProject(projectName, null);
 	}
 
 	public BuildStepMonitor getRequiredMonitorService() {
@@ -60,9 +59,14 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 		return false;
 	}
 
+	public List<Publisher> getProjectPublishersList(AbstractBuild<?, ?> build) {
+		// @TODO: exception handling
+		return TemplateUtils.getProject(projectName, build).getPublishersList().toList();
+	}
+
 	@Override
 	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
-		for (Publisher publisher : getProject().getPublishersList().toList()) {
+		for (Publisher publisher : getProjectPublishersList(build)) {
 			if (!publisher.prebuild(build, listener)) {
 				return false;
 			}
@@ -73,13 +77,13 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 	@Override
 	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
 			BuildListener listener) throws InterruptedException, IOException {
-		for (Publisher publisher : getProject().getPublishersList().toList()) {
-			listener.getLogger().println("[TemplateProject] Starting publishers from: '" + getProjectName() + "'");
+		for (Publisher publisher : getProjectPublishersList(build)) {
+			listener.getLogger().println("[TemplateProject] Starting publishers from: '" + getExpandedProjectName(build) + "'");
 			if (!publisher.perform(build, launcher, listener)) {
-				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + getProjectName() + "'");
+				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + getExpandedProjectName(build) + "'");
 				return false;
 			}
-			listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + getProjectName() + "'");
+			listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + getExpandedProjectName(build) + "'");
 		}
 		return true;
 	}
