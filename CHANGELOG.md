@@ -1,12 +1,13 @@
 # Change Log
 
 ## 1.5
+* **Released Aug 21, 2015**
 * Lots of updates, bounced up to 1.5
 * Expand parameter values, some limitations may apply to SCM (JENKINS-28249)
 * Support Cloudbees folder plugin (JENKINS-24396) 
 * Support for build environment variables (JENKINS-24404)
 * Support for Multiple-SCM when using paramater value
-* Additional logging
+* Additional logging info
 
 ## 1.4.2
 * **Released July 9, 2014**
