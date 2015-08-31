@@ -13,10 +13,10 @@ https://issues.jenkins-ci.org/browse/JENKINS/component/15623/
 
 ## Limitations
 * General:
-** It may be using some plugins in ways that were not intended. Compatibility with all plugins is not guaranteed.
+  * It may be using some plugins in ways that were not intended. Compatibility with all plugins is not guaranteed.
 * It does not support project actions. That means that links that should be on the project page (e.g. 'latest test results') will not be there.
 * Publishers:
-** Post-build publishers need to be 'self-contained', meaning they may not work if a publisher relies on configs in the template project.
+  * Post-build publishers need to be 'self-contained', meaning they may not work if a publisher relies on configs in the template project.
 * SCM:
-** Only supports build variables (not environment variables) as gets into infinite loop using `getEnvironment() since it loops back to `getScm().buildEnvVars()`.
+  * Only supports build variables (not environment variables) as gets into infinite loop using `getEnvironment()` since it loops back to `getScm().buildEnvVars()`.
 * It has had virtually no testing.
