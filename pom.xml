@@ -8,7 +8,7 @@
 
   <groupId>org.jenkins-ci.plugins</groupId>
   <artifactId>template-project</artifactId>
-  <version>1.5.1-SNAPSHOT</version>
+  <version>1.5.1</version>
   <packaging>hpi</packaging>
 
   <name>Template Project plugin</name>
@@ -74,7 +74,7 @@
     <connection>scm:git:git://github.com/jenkinsci/template-project-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/template-project-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/template-project-plugin</url>
-    <tag>HEAD</tag>
+    <tag>template-project-1.5.1</tag>
   </scm>
 
   <repositories>
