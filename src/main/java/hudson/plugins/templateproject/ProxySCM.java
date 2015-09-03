@@ -179,11 +179,7 @@ public class ProxySCM extends SCM {
 
 	@Override
 	public void buildEnvVars(AbstractBuild<?, ?> build, java.util.Map<String, String> env) {
-		// Limitation : Currently only supports build variable for replacement.
-		// Gets into infinite loop using `getEnvironment() since it loops
-		// back to `getScm().buildEnvVars()`
-		String pName = Util.replaceMacro(getProjectName(), build.getBuildVariables());
-		getProjectScm().buildEnvVars(build, env);
+		getProjectScm(build).buildEnvVars(build, env);
 	}
 
 	@Override
