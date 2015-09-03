@@ -1,7 +1,11 @@
 # Change Log
 
+## 1.5.2
+* **Released Sep 2, 2015**
+* Re-fix for JENKINS-24404 by ensuring passing build
+
 ## 1.5
-* **Released Aug 21, 2015**
+* **Released Aug 31, 2015**
 * Lots of updates, bounced up to 1.5
 * Expand parameter values, some limitations may apply to SCM (JENKINS-28249)
 * Support Cloudbees folder plugin (JENKINS-24396) 
