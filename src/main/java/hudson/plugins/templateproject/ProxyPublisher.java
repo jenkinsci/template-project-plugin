@@ -3,6 +3,9 @@ package hudson.plugins.templateproject;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.console.HyperlinkNote;
+import hudson.matrix.MatrixBuild;
+import hudson.matrix.MatrixAggregatable;
+import hudson.matrix.MatrixAggregator;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.Action;
@@ -30,7 +33,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-public class ProxyPublisher extends Recorder implements DependecyDeclarer {
+public class ProxyPublisher extends Recorder implements DependecyDeclarer, MatrixAggregatable {
 
 	private final String projectName;
 
@@ -153,5 +156,22 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 			return FormValidation.ok();
 		}
 	}
+
+    /* (non-Javadoc)
+     * @see hudson.matrix.MatrixAggregatable#createAggregator(hudson.matrix.MatrixBuild, hudson.Launcher, hudson.model.BuildListener)
+     */
+    @Override
+    public MatrixAggregator createAggregator(MatrixBuild build, Launcher launcher, BuildListener listener) {
+        List<MatrixAggregator> aggregators = new ArrayList<MatrixAggregator>();
+        for (Publisher publisher : getProjectPublishersList(build)) {
+            if (publisher instanceof MatrixAggregatable) {
+                MatrixAggregator publisherAggregator = ((MatrixAggregatable) publisher).createAggregator(build, launcher, listener);
+                if (publisherAggregator != null) {
+                    aggregators.add(publisherAggregator);
+                }
+            }
+        }
+        return new ProxyMatrixAggregator(build, launcher, listener, aggregators);
+    }
 
 }
