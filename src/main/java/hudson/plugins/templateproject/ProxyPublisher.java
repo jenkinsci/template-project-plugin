@@ -43,14 +43,6 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 		return projectName;
 	}
 
-	public String getExpandedProjectName(AbstractBuild<?, ?> build) {
-		return TemplateUtils.getExpandedProjectName(projectName, build);
-	}
-
-	public AbstractProject<?, ?> getProject() {
-		return TemplateUtils.getProject(projectName, null);
-	}
-
 	public BuildStepMonitor getRequiredMonitorService() {
 		return BuildStepMonitor.NONE;
 	}
@@ -60,43 +52,54 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 		return false;
 	}
 
-	public List<Publisher> getProjectPublishersList(AbstractBuild<?, ?> build) {
-		// @TODO: exception handling
-		return TemplateUtils.getProject(projectName, build).getPublishersList().toList();
-	}
-
 	@Override
 	public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
-		for (Publisher publisher : getProjectPublishersList(build)) {
-			if (!publisher.prebuild(build, listener)) {
-				return false;
+		AbstractProject<?, ?> project = TemplateUtils.getInstance().getProject(projectName, build);
+
+		if(project != null) {
+			for (Publisher publisher : project.getPublishersList()) {
+				if (!publisher.prebuild(build, listener)) {
+					return false;
+				}
 			}
+			return true;
+		} else {
+			return false;
 		}
-		return true;
 	}
 
 	@Override
-	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher,
-			BuildListener listener) throws InterruptedException, IOException {
-		boolean publishersResult = true;
-		for (Publisher publisher : getProjectPublishersList(build)) {
-			AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
-			listener.getLogger().println("[TemplateProject] Starting publishers from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-			if (!publisher.perform(build, launcher, listener)) {
-				listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + p.getFullDisplayName() + "'");
-				publishersResult = false;
-			} else {
-				listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + p.getFullDisplayName() + "'");
+	public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
+		AbstractProject<?, ?> project = TemplateUtils.getInstance().getProject(getProjectName(), build);
+
+		if(project != null){
+			boolean publishersResult = true;
+
+			for (Publisher publisher : project.getPublishersList()) {
+				listener.getLogger().println("[TemplateProject] Starting publishers from: " + HyperlinkNote.encodeTo('/' + project.getUrl(), project.getFullDisplayName()));
+
+				if (!publisher.perform(build, launcher, listener)) {
+					listener.getLogger().println("[TemplateProject] FAILED performing publishers from: '" + project.getFullDisplayName() + "'");
+					publishersResult = false;
+				} else {
+					listener.getLogger().println("[TemplateProject] Successfully performed publishers from: '" + project.getFullDisplayName() + "'");
+				}
+
 			}
+
+			return publishersResult;
+
+		} else {
+			listener.getLogger().printf("[TemplateProject] FAILED publishers loading, couldn't find project: '%s' %n", getProjectName());
+			return false;
 		}
-		return publishersResult;
 	}
 
 	@Override
 	public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> project) {
 		List<Action> actions = new ArrayList<Action>();
 		// project might not defined when loading the first time
-		AbstractProject<?, ?> templateProject = getProject();
+		AbstractProject<?, ?> templateProject = TemplateUtils.getInstance().getProject(projectName);
 		if (templateProject != null) {
 			for (Publisher publisher : templateProject.getPublishersList().toList()) {
 				actions.addAll(publisher.getProjectActions(project));
@@ -110,8 +113,9 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 	 *  so proxy will handle it as well.
 	 *  {@inheritDoc} 
 	 */
+	@Override
 	public void buildDependencyGraph(AbstractProject project, DependencyGraph graph) {
-		AbstractProject<?, ?> templateProject = getProject();
+		AbstractProject<?, ?> templateProject = TemplateUtils.getInstance().getProject(projectName);
 		if (templateProject != null) {
 			for (Publisher publisher : templateProject.getPublishersList().toList()) {
 				if (publisher instanceof DependecyDeclarer) {
@@ -154,4 +158,19 @@ public class ProxyPublisher extends Recorder implements DependecyDeclarer {
 		}
 	}
 
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		ProxyPublisher that = (ProxyPublisher) o;
+
+		return !(projectName != null ? !projectName.equals(that.projectName) : that.projectName != null);
+
+	}
+
+	@Override
+	public int hashCode() {
+		return projectName != null ? projectName.hashCode() : 0;
+	}
 }
