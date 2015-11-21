@@ -1,11 +1,7 @@
 package hudson.plugins.templateproject;
 
-import hudson.Extension;
-import hudson.FilePath;
-import hudson.Launcher;
+import hudson.*;
 import hudson.console.HyperlinkNote;
-import hudson.Util;
-import hudson.model.BuildListener;
 import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
@@ -34,7 +30,6 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import java.util.List;
 import org.jenkinsci.plugins.multiplescms.MultiSCM;
 import org.jenkinsci.plugins.multiplescms.MultiSCMRevisionState;
 
@@ -52,19 +47,12 @@ public class ProxySCM extends SCM {
 		return projectName;
 	}
 
-	public String getExpandedProjectName(AbstractBuild<?, ?> build) {
-		return TemplateUtils.getExpandedProjectName(projectName, build);
-	}
-
-	// Primarily used for polling, not building.
-	public AbstractProject<?, ?> getProject() {
-		return TemplateUtils.getProject(projectName, null);
-	}
-
 	public SCM getProjectScm(AbstractBuild<?, ?> build) {
-		try {
-			return TemplateUtils.getProject(projectName, build).getScm();
-		} catch (Exception e) {
+		if(build != null) {
+			AbstractProject project = TemplateUtils.getInstance().getProject(projectName, build);
+
+			return project != null ? project.getScm() : new NullSCM();
+		} else {
 			return new NullSCM();
 		}
 	}
@@ -87,9 +75,14 @@ public class ProxySCM extends SCM {
 			}
 		}
 
-		AbstractProject p = TemplateUtils.getProject(getProjectName(), (AbstractBuild) build);
-		listener.getLogger().println("[TemplateProject] Using SCM from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
-		getProjectScm((AbstractBuild) build).checkout(build, launcher, workspace, listener, changelogFile, baseline);
+		AbstractProject project = TemplateUtils.getInstance().getProject(getProjectName(), (AbstractBuild) build);
+
+		if(project != null){
+			listener.getLogger().println("[TemplateProject] Using SCM from: " + HyperlinkNote.encodeTo('/' + project.getUrl(), project.getFullDisplayName()));
+			getProjectScm((AbstractBuild) build).checkout(build, launcher, workspace, listener, changelogFile, baseline);
+		} else {
+			throw new AbortException("[TemplateProject] Can't find template project by name: " + getProjectName());
+		}
 	}
 
 	@Override
