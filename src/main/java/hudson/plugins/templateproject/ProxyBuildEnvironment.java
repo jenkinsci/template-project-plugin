@@ -43,10 +43,6 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 		return projectName;
 	}
 
-	public Item getJob() {
-		return Hudson.getInstance().getItemByFullName(getProjectName(), Item.class);
-	}
-
 	public String getExpandedProjectName(AbstractBuild<?, ?> build) {
 		return TemplateUtils.getExpandedProjectName(projectName, build);
 	}
