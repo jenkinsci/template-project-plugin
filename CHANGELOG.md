@@ -1,6 +1,12 @@
 # Change Log
 
 ## 1.5.2
+* **Released Feb 2, 2016**
+* Add support for build wrappers (pre-SCM steps) and parameters
+* Fix error with jobLink
+* Mitigate JENKINS-30243
+
+## 1.5.1
 * **Released Sep 2, 2015**
 * Re-fix for JENKINS-24404 by ensuring passing build
 
