@@ -2,6 +2,7 @@ package hudson.plugins.templateproject;
 
 import hudson.Extension;
 import hudson.Launcher;
+import hudson.console.HyperlinkNote;
 import hudson.matrix.MatrixProject;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -51,8 +52,9 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 		return TemplateUtils.getProject(projectName, null);
 	}
 
-	public List<BuildWrapper> getProjectBuildWrappers() {
-		AbstractProject p = (AbstractProject) Hudson.getInstance().getItemByFullName(projectName);
+	public List<BuildWrapper> getProjectBuildWrappers(AbstractBuild<?, ?> build) {
+		AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
+
 		if (p instanceof Project) {
 			return ((Project) p).getBuildWrappersList();
 		} else if (p instanceof MatrixProject) {
@@ -63,11 +65,12 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 	}
 
 	@Override
-	public final void buildDependencyGraph(
-					final AbstractProject project, final DependencyGraph graph) {
+	public final void buildDependencyGraph(final AbstractProject project, final DependencyGraph graph) {
 		final Item item = Hudson.getInstance().getItemByFullName(getProjectName());
+		AbstractProject<?, ?> templateProject = (AbstractProject) Hudson.getInstance().getItem(getProjectName());
 		if (item instanceof Project) {
-			for (BuildWrapper wrapper : getProjectBuildWrappers()) {
+			// @TODO : see how important it is that this gets expanded projectName
+			for (BuildWrapper wrapper : getProjectBuildWrappers(null)) {
 				if (wrapper instanceof DependencyDeclarer) {
 					((DependencyDeclarer) wrapper).buildDependencyGraph(project, graph);
 				}
@@ -79,11 +82,12 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 	public Environment setUp(@SuppressWarnings("rawtypes") AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException,
 					InterruptedException {
 
-		listener.getLogger().println("[TemplateProject] Getting environment from: '" + getProjectName() + "'");
-		for (BuildWrapper builder : getProjectBuildWrappers()) {
+		AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
+		listener.getLogger().println("[TemplateProject] Getting environment from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
+		for (BuildWrapper builder : getProjectBuildWrappers(build)) {
 			builder.setUp(build, launcher, listener);
 		}
-		listener.getLogger().println("[TemplateProject] Successfully setup environment from: '" + getProjectName() + "'");
+		listener.getLogger().println("[TemplateProject] Successfully setup environment from: '" + p.getFullDisplayName() + "'");
 
 		return new Environment() {
 			@Override
@@ -96,14 +100,17 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 
 	@Override
 	public void preCheckout(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException {
-		for (BuildWrapper builder : getProjectBuildWrappers()) {
+		AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
+		listener.getLogger().println("[TemplateProject] Starting pre-checkout from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
+		for (BuildWrapper builder : getProjectBuildWrappers(build)) {
 			builder.preCheckout(build, launcher, listener);
 		}
+		listener.getLogger().println("[TemplateProject] Successfully performed pre-checkout from: '" + p.getFullDisplayName() + "'");
 	}
 
 	@Override
 	public Launcher decorateLauncher(AbstractBuild build, Launcher launcher, BuildListener listener) throws IOException, InterruptedException, Run.RunnerAbortedException {
-		for (BuildWrapper builder : getProjectBuildWrappers()) {
+		for (BuildWrapper builder : getProjectBuildWrappers(build)) {
 			launcher = builder.decorateLauncher(build, launcher, listener);
 		}
 		return launcher;
@@ -111,7 +118,7 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 
 	@Override
 	public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) throws IOException, InterruptedException, Run.RunnerAbortedException {
-		for (BuildWrapper builder : getProjectBuildWrappers()) {
+		for (BuildWrapper builder : getProjectBuildWrappers(build)) {
 			logger = builder.decorateLogger(build, logger);
 		}
 		return logger;
@@ -155,7 +162,8 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 	@Override
 	public Collection<? extends Action> getProjectActions(AbstractProject project) {
 		List<Action> actions = new ArrayList<Action>();
-		for (BuildWrapper wrapper : getProjectBuildWrappers()) {
+                // @TODO : see how important it is that this gets expanded projectName
+		for (BuildWrapper wrapper : getProjectBuildWrappers(null)) {
 			actions.addAll(wrapper.getProjectActions(project));
 		}
 		return actions;
