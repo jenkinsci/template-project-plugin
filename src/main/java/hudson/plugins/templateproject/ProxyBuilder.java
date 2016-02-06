@@ -49,6 +49,10 @@ public class ProxyBuilder extends Builder implements DependecyDeclarer {
 		return TemplateUtils.getExpandedProjectName(projectName, build);
 	}
 
+	public AbstractProject<?, ?> getProject() {
+		return TemplateUtils.getProject(projectName, null);
+	}
+
 	public List<Builder> getProjectBuilders(AbstractBuild<?, ?> build) {
 		AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
 

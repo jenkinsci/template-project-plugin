@@ -81,7 +81,8 @@ public class ProxySCM extends SCM {
 		// Potentially due to SCM polling and references lost, or fixed with:
 		// https://github.com/jenkinsci/multiple-scms-plugin/pull/6
 		// https://issues.jenkins-ci.org/browse/JENKINS-27638
-		if (getProjectScm((AbstractBuild) build) instanceof MultiSCM) {
+		// Since MultiSCM is optional, might not be installed, hacky check string name.
+		if (getProjectScm((AbstractBuild) build).toString().contains("multiplescms")) {
 			if ((baseline == SCMRevisionState.NONE) || (baseline == null)) {
 				baseline = new MultiSCMRevisionState();
 			}
