@@ -3,6 +3,9 @@ package hudson.plugins.templateproject;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.console.HyperlinkNote;
+import hudson.matrix.MatrixAggregatable;
+import hudson.matrix.MatrixAggregator;
+import hudson.matrix.MatrixBuild;
 import hudson.matrix.MatrixProject;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -32,7 +35,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-public class ProxyBuilder extends Builder implements DependecyDeclarer {
+public class ProxyBuilder extends Builder implements DependecyDeclarer, MatrixAggregatable {
 
 	private final String projectName;
 
@@ -141,5 +144,22 @@ public class ProxyBuilder extends Builder implements DependecyDeclarer {
 		}
 		return actions;
 	}
-	
+
+    /* (non-Javadoc)
+     * @see hudson.matrix.MatrixAggregatable#createAggregator(hudson.matrix.MatrixBuild, hudson.Launcher, hudson.model.BuildListener)
+     */
+    @Override
+    public MatrixAggregator createAggregator(MatrixBuild build, Launcher launcher, BuildListener listener) {
+        List<MatrixAggregator> aggregators = new ArrayList<MatrixAggregator>();
+        for (Builder builder : getProjectBuilders(build)) {
+            if (builder instanceof MatrixAggregatable) {
+                MatrixAggregator builderAggregator = ((MatrixAggregatable) builder).createAggregator(build, launcher, listener);
+                if (builderAggregator != null) {
+                    aggregators.add(builderAggregator);
+                }
+            }
+        }
+        return new ProxyMatrixAggregator(build, launcher, listener, aggregators);
+    }
+
 }
