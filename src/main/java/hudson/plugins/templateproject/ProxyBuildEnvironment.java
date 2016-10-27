@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -84,16 +85,27 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 
 		AbstractProject p = TemplateUtils.getProject(getProjectName(), build);
 		listener.getLogger().println("[TemplateProject] Getting environment from: " + HyperlinkNote.encodeTo('/'+ p.getUrl(), p.getFullDisplayName()));
+		final ArrayList<Environment> envs = new ArrayList<Environment>();
 		for (BuildWrapper builder : getProjectBuildWrappers(build)) {
-			builder.setUp(build, launcher, listener);
+			envs.add(builder.setUp(build, launcher, listener));
 		}
 		listener.getLogger().println("[TemplateProject] Successfully setup environment from: '" + p.getFullDisplayName() + "'");
 
 		return new Environment() {
 			@Override
+			public void buildEnvVars(Map<String, String> vars) {
+				for (Environment env : envs) {
+					env.buildEnvVars(vars);
+				}
+			}
+
+			@Override
 			public boolean tearDown(@SuppressWarnings("rawtypes") AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
-				// let build continue
-				return true;
+				boolean operationSucceeded = true;
+				for (Environment env : envs) {
+					operationSucceeded &= env.tearDown(build, listener);
+				}
+				return operationSucceeded;
 			}
 		};
 	}
