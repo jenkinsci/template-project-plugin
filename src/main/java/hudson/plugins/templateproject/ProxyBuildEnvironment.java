@@ -101,8 +101,11 @@ public class ProxyBuildEnvironment extends BuildWrapper implements DependencyDec
 
 			@Override
 			public boolean tearDown(@SuppressWarnings("rawtypes") AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {
-				// let build continue
-				return true;
+				boolean operationSucceeded = true;
+				for (Environment env : envs) {
+					operationSucceeded &= env.tearDown(build, listener);
+				}
+				return operationSucceeded;
 			}
 		};
 	}
