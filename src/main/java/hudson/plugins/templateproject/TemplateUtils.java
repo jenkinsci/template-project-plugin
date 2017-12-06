@@ -2,11 +2,7 @@ package hudson.plugins.templateproject;
 
 import hudson.EnvVars;
 import hudson.Util;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.TaskListener;
-import hudson.model.Hudson;
+import hudson.model.*;
 import hudson.util.LogTaskListener;
 import static java.util.logging.Level.INFO;
 import java.util.logging.Logger;
@@ -20,12 +16,25 @@ public class TemplateUtils {
 		if (build != null) {
 			pName = TemplateUtils.getExpandedProjectName(projectName, build);
 
-			if (Hudson.getInstance().getItemByFullName(pName) == null) {
+			if (getItemByFullNameWorkaround(pName) == null) {
 				logger.info("[TemplateProject] Template Project '" + pName + "' not found. Skipping.");
 			}
 		}
 
-		return (AbstractProject<?, ?>) Hudson.getInstance().getItemByFullName(pName);
+		return getItemByFullNameWorkaround(pName);
+	}
+
+	private static AbstractProject<?, ?> getItemByFullNameWorkaround(String projectName) {
+		Item project = Hudson.getInstance().getItemByFullName(projectName);
+		if (project == null) { //for some reason sometimes it returns simply null although the project is existing
+			logger.fine("[TemplateProject] fall back for getItemByFullName while searching '" + projectName + "'");
+			for (TopLevelItem item : Hudson.getInstance().getItems()) {
+				if (projectName.equals(item.getFullName()))
+					return (AbstractProject<?, ?>) item;
+			}
+		}
+
+		return (AbstractProject<?, ?>) project;
 	}
 
 	public static String getExpandedProjectName(String projectName, AbstractBuild<?, ?> build) {
