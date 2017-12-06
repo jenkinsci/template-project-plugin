@@ -35,11 +35,14 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import java.util.List;
+import java.util.logging.Logger;
+
 import org.jenkinsci.plugins.multiplescms.MultiSCM;
 import org.jenkinsci.plugins.multiplescms.MultiSCMRevisionState;
 
 
 public class ProxySCM extends SCM {
+	private static final Logger logger = Logger.getLogger(ProxySCM.class.getName());
 
 	private final String projectName;
 
@@ -65,6 +68,7 @@ public class ProxySCM extends SCM {
 		try {
 			return TemplateUtils.getProject(projectName, build).getScm();
 		} catch (Exception e) {
+			logger.warning("[TemplateProject] Failed while searching project SCM for '" + projectName + "' with error: " + e.getMessage());
 			return new NullSCM();
 		}
 	}
