@@ -4,8 +4,6 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.console.HyperlinkNote;
-import hudson.Util;
-import hudson.model.BuildListener;
 import hudson.model.Item;
 import hudson.model.TaskListener;
 import hudson.model.AbstractBuild;
@@ -29,15 +27,13 @@ import java.io.IOException;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
+import jenkins.model.Jenkins;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
-import java.util.List;
-import org.jenkinsci.plugins.multiplescms.MultiSCM;
 import org.jenkinsci.plugins.multiplescms.MultiSCMRevisionState;
-
 
 public class ProxySCM extends SCM {
 
@@ -82,7 +78,7 @@ public class ProxySCM extends SCM {
 		// https://github.com/jenkinsci/multiple-scms-plugin/pull/6
 		// https://issues.jenkins-ci.org/browse/JENKINS-27638
 		// Since MultiSCM is optional, might not be installed, hacky check string name.
-		if (getProjectScm((AbstractBuild) build).toString().contains("multiplescms")) {
+		if(Jenkins.getInstance() != null && Jenkins.getInstance().getPlugin("multiple-scms") != null) {
 			if ((baseline == SCMRevisionState.NONE) || (baseline == null)) {
 				baseline = new MultiSCMRevisionState();
 			}
@@ -106,7 +102,7 @@ public class ProxySCM extends SCM {
 		return getProjectScm().pollChanges(project, launcher, workspace, listener);
 	}
 
-	@Extension
+	@Extension(optional = true)
 	public static class DescriptorImpl extends SCMDescriptor {
 
 		public DescriptorImpl() {
