@@ -59,7 +59,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>cloudbees-folder</artifactId>
-      <version>4.9</version>
+      <version>6.848.ve3b_fd7839a_81</version>
       <optional>true</optional>
     </dependency>
     <dependency>
